@@ -1,0 +1,16 @@
+# Go build artifacts
+*.exe
+*.test
+*.out
+coverage.*
+
+# IDE
+.idea/
+.vscode/
+
+# Environment variables and secrets
+.env
+
+# Go workspace
+go.work
+go.work.sum
