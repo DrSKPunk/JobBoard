@@ -8,7 +8,7 @@ import (
 )
 
 func GetOtklikiByVacancyID(ctx context.Context, vacID int) ([]models.Otkliki, error) {
-	rows, err := database.DB.Query(ctx, "SELECT id_otklika, id_rezume, id_vakansii, data_otklika::text, status FROM otkliki WHERE id_vakansii = $1", vacID)
+	rows, err := database.DB.Query(ctx, "SELECT id, resume_id, vacancy_id, created_at::text, status FROM applications WHERE vacancy_id = $1", vacID)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func GetOtklikiByVacancyID(ctx context.Context, vacID int) ([]models.Otkliki, er
 	var otkliki []models.Otkliki
 	for rows.Next() {
 		var o models.Otkliki
-		err := rows.Scan(&o.ID, &o.IDRezume, &o.IDVakansii, &o.DataOtk, &o.Status)
+		err := rows.Scan(&o.ID, &o.ResumeID, &o.VacancyID, &o.CreatedAt, &o.Status)
 		if err != nil {
 			return nil, err
 		}
@@ -29,7 +29,7 @@ func GetOtklikiByVacancyID(ctx context.Context, vacID int) ([]models.Otkliki, er
 func CreateOtklik(ctx context.Context, o models.Otkliki) (int, error) {
 	var id int
 	err := database.DB.QueryRow(ctx,
-		"INSERT INTO otkliki (id_rezume, id_vakansii, data_otklika, status) VALUES ($1, $2, $3, $4) RETURNING id_otklika",
-		o.IDRezume, o.IDVakansii, o.DataOtk, o.Status).Scan(&id)
+		"INSERT INTO applications (resume_id, vacancy_id, created_at, status) VALUES ($1, $2, $3, $4) RETURNING id",
+		o.ResumeID, o.VacancyID, o.CreatedAt, o.Status).Scan(&id)
 	return id, err
 }

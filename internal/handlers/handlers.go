@@ -115,7 +115,7 @@ func ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
-	o.IDVakansii = vacID
+	o.VacancyID = vacID
 
 	id, err := storage.CreateOtklik(r.Context(), o)
 	if err != nil {

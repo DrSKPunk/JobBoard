@@ -8,7 +8,7 @@ import (
 )
 
 func GetAllVacancies(ctx context.Context) ([]models.Vakansii, error) {
-	rows, err := database.DB.Query(ctx, "SELECT id_vakansii, nazvanie, opisanie, zarplata, gorod, data_publikacii::text FROM vakansii")
+	rows, err := database.DB.Query(ctx, "SELECT id, title, description, salary, city, published_at::text FROM vacancies")
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func GetAllVacancies(ctx context.Context) ([]models.Vakansii, error) {
 	var vacancies []models.Vakansii
 	for rows.Next() {
 		var v models.Vakansii
-		err := rows.Scan(&v.ID, &v.Nazvanie, &v.Opisanie, &v.Zarplata, &v.Gorod, &v.DataPub)
+		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.Salary, &v.City, &v.PublishedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -28,37 +28,37 @@ func GetAllVacancies(ctx context.Context) ([]models.Vakansii, error) {
 
 func GetVacancyByID(ctx context.Context, id int) (models.Vakansii, error) {
 	var v models.Vakansii
-	err := database.DB.QueryRow(ctx, "SELECT id_vakansii, nazvanie, opisanie, zarplata, gorod, data_publikacii::text FROM vakansii WHERE id_vakansii = $1", id).
-		Scan(&v.ID, &v.Nazvanie, &v.Opisanie, &v.Zarplata, &v.Gorod, &v.DataPub)
+	err := database.DB.QueryRow(ctx, "SELECT id, title, description, salary, city, published_at::text FROM vacancies WHERE id = $1", id).
+		Scan(&v.ID, &v.Title, &v.Description, &v.Salary, &v.City, &v.PublishedAt)
 	return v, err
 }
 
 func CreateVacancy(ctx context.Context, v models.Vakansii) (int, error) {
 	var companyID int
-	err := database.DB.QueryRow(ctx, "SELECT id_kompanii FROM kompanii LIMIT 1").Scan(&companyID)
+	err := database.DB.QueryRow(ctx, "SELECT id FROM companies LIMIT 1").Scan(&companyID)
 	if err != nil {
 		err = database.DB.QueryRow(ctx,
-			"INSERT INTO kompanii (nazvanie, opisanie, gorod, telefon, email) VALUES ('Тестовая компания', 'Описание', 'Москва', '+70000000000', 'test@test.ru') RETURNING id_kompanii").Scan(&companyID)
+			"INSERT INTO companies (name) VALUES ('Test Company') RETURNING id").Scan(&companyID)
 		if err != nil {
 			return 0, err
 		}
 	}
+
 	var id int
 	err = database.DB.QueryRow(ctx,
-		"INSERT INTO vakansii (id_kompanii, nazvanie, opisanie, zarplata, gorod, data_publikacii) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_vakansii",
-		companyID, v.Nazvanie, v.Opisanie, v.Zarplata, v.Gorod, v.DataPub).Scan(&id)
-
+		"INSERT INTO vacancies (company_id, title, description, salary, city, published_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		companyID, v.Title, v.Description, v.Salary, v.City, v.PublishedAt).Scan(&id)
 	return id, err
 }
 
 func UpdateVacancy(ctx context.Context, id int, v models.Vakansii) error {
 	_, err := database.DB.Exec(ctx,
-		"UPDATE vakansii SET nazvanie = $1, opisanie = $2, zarplata = $3, gorod = $4, data_publikacii = $5 WHERE id_vakansii = $6",
-		v.Nazvanie, v.Opisanie, v.Zarplata, v.Gorod, v.DataPub, id)
+		"UPDATE vacancies SET title = $1, description = $2, salary = $3, city = $4, published_at = $5 WHERE id = $6",
+		v.Title, v.Description, v.Salary, v.City, v.PublishedAt, id)
 	return err
 }
 
 func DeleteVacancy(ctx context.Context, id int) error {
-	_, err := database.DB.Exec(ctx, "DELETE FROM vakansii WHERE id_vakansii = $1", id)
+	_, err := database.DB.Exec(ctx, "DELETE FROM vacancies WHERE id = $1", id)
 	return err
 }

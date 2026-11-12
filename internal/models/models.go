@@ -7,18 +7,18 @@ type User struct {
 }
 
 type Vakansii struct {
-	ID       int    `json:"id_vakansii"`
-	Nazvanie string `json:"nazvanie"`
-	Opisanie string `json:"opisanie"`
-	Zarplata int    `json:"zarplata"`
-	Gorod    string `json:"gorod"`
-	DataPub  string `json:"data_publikacii"`
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Salary      int    `json:"salary"`
+	City        string `json:"city"`
+	PublishedAt string `json:"published_at"`
 }
 
 type Otkliki struct {
-	ID         int    `json:"id_otklika"`
-	IDRezume   int    `json:"id_rezume"`
-	IDVakansii int    `json:"id_vakansii"`
-	DataOtk    string `json:"data_otklika"`
-	Status     string `json:"status"`
+	ID        int    `json:"id"`
+	ResumeID  int    `json:"resume_id"`
+	VacancyID int    `json:"vacancy_id"`
+	CreatedAt string `json:"created_at"`
+	Status    string `json:"status"`
 }
