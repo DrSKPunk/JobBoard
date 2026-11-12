@@ -12,16 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func jsonResponse(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(data)
-}
-
-func jsonError(w http.ResponseWriter, status int, msg string) {
-	jsonResponse(w, status, map[string]string{"error": msg})
-}
-
 type credentials struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
@@ -79,8 +69,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "некорректный JSON")
 		return
 	}
-
-	creds.Login = strings.TrimSpace(creds.Login)
 
 	var found *models.User
 	for i := range storage.Users {

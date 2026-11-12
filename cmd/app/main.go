@@ -5,11 +5,17 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/DrSKPunk/JobBoard/internal/database"
 	"github.com/DrSKPunk/JobBoard/internal/handlers"
 	"github.com/gorilla/mux"
 )
 
 func main() {
+	if err := database.Connect(); err != nil {
+		log.Fatalf("Ошибка подключения к БД: %v", err)
+	}
+	defer database.DB.Close()
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/auth/register", handlers.Register).Methods("POST")
