@@ -11,3 +11,8 @@ var Otkliki = []models.Otkliki{}
 
 var NextVakansiiID = 3
 var NextOtklikID = 1
+
+var Users = []models.User{}
+var NextUserID = 1
+
+var Tokens = map[string]int{}

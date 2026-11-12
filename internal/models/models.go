@@ -16,3 +16,9 @@ type Otkliki struct {
 	DataOtk    string
 	Status     string
 }
+
+type User struct {
+	ID       int    `json:"id"`
+	Login    string `json:"login"`
+	Password string `json:"-"` // bcrypt-хеш, наружу не отдаём
+}
