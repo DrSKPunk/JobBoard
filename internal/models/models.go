@@ -6,7 +6,7 @@ type User struct {
 	Password string `json:"-"`
 }
 
-type Vakansii struct {
+type Vacancy struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -15,7 +15,7 @@ type Vakansii struct {
 	PublishedAt string `json:"published_at"`
 }
 
-type Otkliki struct {
+type Application struct {
 	ID        int    `json:"id"`
 	ResumeID  int    `json:"resume_id"`
 	VacancyID int    `json:"vacancy_id"`

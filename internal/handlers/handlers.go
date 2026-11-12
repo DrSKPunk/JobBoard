@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/DrSKPunk/JobBoard/internal/models"
-	"github.com/DrSKPunk/JobBoard/internal/storage"
 	"github.com/gorilla/mux"
 )
 
@@ -22,8 +21,8 @@ func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func GetVakansii(w http.ResponseWriter, r *http.Request) {
-	vakansii, err := storage.GetAllVacancies(r.Context())
+func (h *Handler) GetVakansii(w http.ResponseWriter, r *http.Request) {
+	vakansii, err := h.vacancyStorage.GetAllVacancies(r.Context())
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "Ошибка получения вакансий из БД")
 		return
@@ -31,7 +30,7 @@ func GetVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, vakansii)
 }
 
-func GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -39,7 +38,7 @@ func GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v, err := storage.GetVacancyByID(r.Context(), id)
+	v, err := h.vacancyStorage.GetVacancyByID(r.Context(), id)
 	if err != nil {
 		jsonError(w, http.StatusNotFound, "Вакансия не найдена")
 		return
@@ -47,14 +46,14 @@ func GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, v)
 }
 
-func CreateVakansii(w http.ResponseWriter, r *http.Request) {
-	var v models.Vakansii
+func (h *Handler) CreateVakansii(w http.ResponseWriter, r *http.Request) {
+	var v models.Vacancy
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
 
-	id, err := storage.CreateVacancy(r.Context(), v)
+	id, err := h.vacancyStorage.CreateVacancy(r.Context(), v)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "Не удалось создать вакансию: "+err.Error())
 		return
@@ -64,7 +63,7 @@ func CreateVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusCreated, v)
 }
 
-func UpdateVakansii(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateVakansii(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -72,13 +71,13 @@ func UpdateVakansii(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var v models.Vakansii
+	var v models.Vacancy
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
 
-	if err := storage.UpdateVacancy(r.Context(), id, v); err != nil {
+	if err := h.vacancyStorage.UpdateVacancy(r.Context(), id, v); err != nil {
 		jsonError(w, http.StatusInternalServerError, "Не удалось обновить вакансию")
 		return
 	}
@@ -87,7 +86,7 @@ func UpdateVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, v)
 }
 
-func DeleteVakansii(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteVakansii(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -95,14 +94,14 @@ func DeleteVakansii(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := storage.DeleteVacancy(r.Context(), id); err != nil {
+	if err := h.vacancyStorage.DeleteVacancy(r.Context(), id); err != nil {
 		jsonError(w, http.StatusInternalServerError, "Не удалось удалить вакансию")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	vacID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -110,14 +109,14 @@ func ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var o models.Otkliki
+	var o models.Application
 	if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
 	o.VacancyID = vacID
 
-	id, err := storage.CreateOtklik(r.Context(), o)
+	id, err := h.otklikStorage.CreateOtklik(r.Context(), o)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "Не удалось создать отклик: "+err.Error())
 		return
@@ -127,7 +126,7 @@ func ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusCreated, o)
 }
 
-func GetOtkliki(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetOtkliki(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	vacID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -135,13 +134,13 @@ func GetOtkliki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	otkliki, err := storage.GetOtklikiByVacancyID(r.Context(), vacID)
+	otkliki, err := h.otklikStorage.GetOtklikiByVacancyID(r.Context(), vacID)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "Ошибка получения откликов")
 		return
 	}
 	if otkliki == nil {
-		otkliki = []models.Otkliki{}
+		otkliki = []models.Application{}
 	}
 	jsonResponse(w, http.StatusOK, otkliki)
 }

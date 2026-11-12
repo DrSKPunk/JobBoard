@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/DrSKPunk/JobBoard/internal/models"
-	"github.com/DrSKPunk/JobBoard/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
+
+var Tokens = map[string]int{}
 
 type credentials struct {
 	Login    string `json:"login"`
@@ -22,7 +22,7 @@ type authResponse struct {
 	UserID int    `json:"user_id"`
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var creds credentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		jsonError(w, http.StatusBadRequest, "некорректный JSON")
@@ -30,86 +30,63 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	creds.Login = strings.TrimSpace(creds.Login)
-	if creds.Login == "" || creds.Password == "" {
-		jsonError(w, http.StatusBadRequest, "логин и пароль обязательны")
+	if creds.Login == "" || len(creds.Password) < 6 {
+		jsonError(w, http.StatusBadRequest, "неверные данные (пароль от 6 символов)")
 		return
-	}
-	if len(creds.Password) < 6 {
-		jsonError(w, http.StatusBadRequest, "пароль должен быть не короче 6 символов")
-		return
-	}
-
-	for _, u := range storage.Users {
-		if u.Login == creds.Login {
-			jsonError(w, http.StatusConflict, "пользователь с таким логином уже существует")
-			return
-		}
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "ошибка хеширования пароля")
+		jsonError(w, http.StatusInternalServerError, "ошибка хеширования")
 		return
 	}
 
-	user := models.User{
-		ID:       storage.NextUserID,
-		Login:    creds.Login,
-		Password: string(hash),
+	id, err := h.userStorage.CreateUser(r.Context(), creds.Login, string(hash))
+	if err != nil {
+		jsonError(w, http.StatusConflict, "пользователь уже существует или ошибка БД")
+		return
 	}
-	storage.NextUserID++
-	storage.Users = append(storage.Users, user)
 
-	jsonResponse(w, http.StatusCreated, user)
+	jsonResponse(w, http.StatusCreated, map[string]interface{}{"id": id, "login": creds.Login})
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var creds credentials
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		jsonError(w, http.StatusBadRequest, "некорректный JSON")
 		return
 	}
 
-	var found *models.User
-	for i := range storage.Users {
-		if storage.Users[i].Login == creds.Login {
-			found = &storage.Users[i]
-			break
-		}
-	}
-	if found == nil {
-		jsonError(w, http.StatusUnauthorized, "неверный логин или пароль")
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(found.Password), []byte(creds.Password)); err != nil {
-		jsonError(w, http.StatusUnauthorized, "неверный логин или пароль")
-		return
-	}
-
-	token, err := generateToken()
+	u, err := h.userStorage.GetUserByLogin(r.Context(), creds.Login)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "не удалось сгенерировать токен")
+		jsonError(w, http.StatusUnauthorized, "неверный логин или пароль")
 		return
 	}
-	storage.Tokens[token] = found.ID
 
-	jsonResponse(w, http.StatusOK, authResponse{Token: token, UserID: found.ID})
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(creds.Password)); err != nil {
+		jsonError(w, http.StatusUnauthorized, "неверный логин или пароль")
+		return
+	}
+
+	token, _ := generateToken()
+	Tokens[token] = u.ID
+
+	jsonResponse(w, http.StatusOK, authResponse{Token: token, UserID: u.ID})
 }
 
-func Me(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	userID, ok := userIDFromRequest(r)
 	if !ok {
 		jsonError(w, http.StatusUnauthorized, "требуется авторизация")
 		return
 	}
-	for _, u := range storage.Users {
-		if u.ID == userID {
-			jsonResponse(w, http.StatusOK, u)
-			return
-		}
+
+	u, err := h.userStorage.GetUserByID(r.Context(), userID)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "пользователь не найден")
+		return
 	}
-	jsonError(w, http.StatusUnauthorized, "пользователь не найден")
+	jsonResponse(w, http.StatusOK, u)
 }
 
 func generateToken() (string, error) {
@@ -127,6 +104,6 @@ func userIDFromRequest(r *http.Request) (int, bool) {
 		return 0, false
 	}
 	token := strings.TrimSpace(strings.TrimPrefix(auth, prefix))
-	userID, ok := storage.Tokens[token]
+	userID, ok := Tokens[token]
 	return userID, ok
 }
