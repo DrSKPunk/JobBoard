@@ -1,0 +1,301 @@
+basePath: /
+definitions:
+  dto.ApplicationRequest:
+    properties:
+      resume_id:
+        type: integer
+    type: object
+  dto.ApplicationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      resume_id:
+        type: integer
+      status:
+        type: string
+      vacancy_id:
+        type: integer
+    type: object
+  dto.AuthResponse:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dto.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.RegisterRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+    type: object
+  dto.VacancyRequest:
+    properties:
+      city:
+        type: string
+      description:
+        type: string
+      published_at:
+        type: string
+      salary:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.VacancyResponse:
+    properties:
+      city:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      published_at:
+        type: string
+      salary:
+        type: integer
+      title:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для управления вакансиями и откликами.
+  title: JobBoard API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Авторизация
+      tags:
+      - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - BearerAuth: []
+      summary: Профиль
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация
+      tags:
+      - auth
+  /vakansii:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.VacancyResponse'
+            type: array
+      summary: Список вакансий
+      tags:
+      - vacancies
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VacancyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.VacancyResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать вакансию
+      tags:
+      - vacancies
+  /vakansii/{id}:
+    delete:
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Удалить вакансию
+      tags:
+      - vacancies
+    get:
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VacancyResponse'
+      summary: Вакансия по ID
+      tags:
+      - vacancies
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VacancyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VacancyResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновить вакансию
+      tags:
+      - vacancies
+  /vakansii/{id}/otclick:
+    get:
+      parameters:
+      - description: ID вакансии
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ApplicationResponse'
+            type: array
+      summary: Отклики на вакансию
+      tags:
+      - applications
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID вакансии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ApplicationResponse'
+      security:
+      - BearerAuth: []
+      summary: Оставить отклик
+      tags:
+      - applications
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

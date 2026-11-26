@@ -1,4 +1,3 @@
-# Go build artifacts
 *.exe
 *.test
 *.out
@@ -8,9 +7,7 @@ coverage.*
 .idea/
 .vscode/
 
-# Environment variables and secrets
 .env
 
-# Go workspace
 go.work
 go.work.sum
