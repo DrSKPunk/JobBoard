@@ -11,7 +11,20 @@ import (
 	"github.com/DrSKPunk/JobBoard/internal/storage"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+
+	_ "github.com/DrSKPunk/JobBoard/docs"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// @title           JobBoard API
+// @version         1.0
+// @description     API для управления вакансиями и откликами.
+// @host            localhost:8080
+// @BasePath        /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -47,6 +60,8 @@ func main() {
 
 	r.HandleFunc("/vakansii/{id}/otclick", handlers.AuthRequired(h.ApplyForVakansii, userStorage)).Methods("POST")
 	r.HandleFunc("/vakansii/{id}/otclick", h.GetOtkliki).Methods("GET")
+
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

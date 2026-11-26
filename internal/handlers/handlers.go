@@ -9,6 +9,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// GetVakansii godoc
+// @Summary      Список вакансий
+// @Tags         vacancies
+// @Produce      json
+// @Success      200  {array}  dto.VacancyResponse
+// @Router       /vakansii [get]
 func (h *Handler) GetVakansii(w http.ResponseWriter, r *http.Request) {
 	res, err := h.vacancyService.GetAll(r.Context())
 	if err != nil {
@@ -18,6 +24,13 @@ func (h *Handler) GetVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, res)
 }
 
+// GetVakansiiByID godoc
+// @Summary      Вакансия по ID
+// @Tags         vacancies
+// @Produce      json
+// @Param        id path int true "ID"
+// @Success      200  {object}  dto.VacancyResponse
+// @Router       /vakansii/{id} [get]
 func (h *Handler) GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
@@ -33,6 +46,15 @@ func (h *Handler) GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, res)
 }
 
+// CreateVakansii godoc
+// @Summary      Создать вакансию
+// @Tags         vacancies
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        input body dto.VacancyRequest true "Данные"
+// @Success      201  {object}  dto.VacancyResponse
+// @Router       /vakansii [post]
 func (h *Handler) CreateVakansii(w http.ResponseWriter, r *http.Request) {
 	var req dto.VacancyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -53,6 +75,16 @@ func (h *Handler) CreateVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusCreated, res)
 }
 
+// UpdateVakansii godoc
+// @Summary      Обновить вакансию
+// @Tags         vacancies
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID"
+// @Param        input body dto.VacancyRequest true "Данные"
+// @Success      200  {object}  dto.VacancyResponse
+// @Router       /vakansii/{id} [put]
 func (h *Handler) UpdateVakansii(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
@@ -78,6 +110,13 @@ func (h *Handler) UpdateVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, res)
 }
 
+// DeleteVakansii godoc
+// @Summary      Удалить вакансию
+// @Tags         vacancies
+// @Security     BearerAuth
+// @Param        id path int true "ID"
+// @Success      204
+// @Router       /vakansii/{id} [delete]
 func (h *Handler) DeleteVakansii(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
@@ -92,6 +131,16 @@ func (h *Handler) DeleteVakansii(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ApplyForVakansii godoc
+// @Summary      Оставить отклик
+// @Tags         applications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID вакансии"
+// @Param        input body dto.ApplicationRequest true "Данные"
+// @Success      201  {object}  dto.ApplicationResponse
+// @Router       /vakansii/{id}/otclick [post]
 func (h *Handler) ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 	vacID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
@@ -117,6 +166,13 @@ func (h *Handler) ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusCreated, res)
 }
 
+// GetOtkliki godoc
+// @Summary      Отклики на вакансию
+// @Tags         applications
+// @Produce      json
+// @Param        id path int true "ID вакансии"
+// @Success      200  {array}  dto.ApplicationResponse
+// @Router       /vakansii/{id}/otclick [get]
 func (h *Handler) GetOtkliki(w http.ResponseWriter, r *http.Request) {
 	vacID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
