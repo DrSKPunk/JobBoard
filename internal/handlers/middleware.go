@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/DrSKPunk/JobBoard/internal/storage"
 )
@@ -19,8 +20,19 @@ func AuthRequired(next http.HandlerFunc, userStorage *storage.UserStorage) http.
 			return
 		}
 
-		// Кладем ID пользователя в контекст (чтобы хендлеры могли его достать)
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next(w, r.WithContext(ctx))
 	}
+}
+
+func userIDFromRequest(r *http.Request) (int, bool) {
+	auth := r.Header.Get("Authorization")
+	const prefix = "Bearer "
+	if !strings.HasPrefix(auth, prefix) {
+		return 0, false
+	}
+	token := strings.TrimSpace(strings.TrimPrefix(auth, prefix))
+
+	userID, ok := Tokens[token]
+	return userID, ok
 }

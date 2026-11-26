@@ -7,6 +7,7 @@ import (
 
 	"github.com/DrSKPunk/JobBoard/internal/database"
 	"github.com/DrSKPunk/JobBoard/internal/handlers"
+	"github.com/DrSKPunk/JobBoard/internal/services"
 	"github.com/DrSKPunk/JobBoard/internal/storage"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -26,7 +27,11 @@ func main() {
 	otklikStorage := storage.NewOtklikiStorage(database.DB)
 	userStorage := storage.NewUserStorage(database.DB)
 
-	h := handlers.NewHandler(vacancyStorage, otklikStorage, userStorage)
+	userService := services.NewUserService(userStorage)
+	vacancyService := services.NewVacancyService(vacancyStorage)
+	applicationService := services.NewApplicationService(otklikStorage)
+
+	h := handlers.NewHandler(userService, vacancyService, applicationService)
 
 	r := mux.NewRouter()
 

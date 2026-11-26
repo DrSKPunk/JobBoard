@@ -1,17 +1,17 @@
 package handlers
 
-import "github.com/DrSKPunk/JobBoard/internal/storage"
+import "github.com/DrSKPunk/JobBoard/internal/services"
 
 type Handler struct {
-	vacancyStorage *storage.VacancyStorage
-	otklikStorage  *storage.OtklikiStorage
-	userStorage    *storage.UserStorage
+	userService        *services.UserService
+	vacancyService     *services.VacancyService
+	applicationService *services.ApplicationService
 }
 
-func NewHandler(vs *storage.VacancyStorage, os *storage.OtklikiStorage, us *storage.UserStorage) *Handler {
+func NewHandler(us *services.UserService, vs *services.VacancyService, as *services.ApplicationService) *Handler {
 	return &Handler{
-		vacancyStorage: vs,
-		otklikStorage:  os,
-		userStorage:    us,
+		userService:        us,
+		vacancyService:     vs,
+		applicationService: as,
 	}
 }

@@ -5,142 +5,132 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/DrSKPunk/JobBoard/internal/models"
+	"github.com/DrSKPunk/JobBoard/internal/dto"
 	"github.com/gorilla/mux"
 )
 
-func jsonError(w http.ResponseWriter, status int, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
-}
-
-func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
-}
-
 func (h *Handler) GetVakansii(w http.ResponseWriter, r *http.Request) {
-	vakansii, err := h.vacancyStorage.GetAllVacancies(r.Context())
+	res, err := h.vacancyService.GetAll(r.Context())
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "Ошибка получения вакансий из БД")
+		jsonError(w, http.StatusInternalServerError, "Ошибка получения вакансий")
 		return
 	}
-	jsonResponse(w, http.StatusOK, vakansii)
+	jsonResponse(w, http.StatusOK, res)
 }
 
 func (h *Handler) GetVakansiiByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "Неверный ID вакансии")
+		jsonError(w, http.StatusBadRequest, "Неверный ID")
 		return
 	}
 
-	v, err := h.vacancyStorage.GetVacancyByID(r.Context(), id)
+	res, err := h.vacancyService.GetByID(r.Context(), id)
 	if err != nil {
 		jsonError(w, http.StatusNotFound, "Вакансия не найдена")
 		return
 	}
-	jsonResponse(w, http.StatusOK, v)
+	jsonResponse(w, http.StatusOK, res)
 }
 
 func (h *Handler) CreateVakansii(w http.ResponseWriter, r *http.Request) {
-	var v models.Vacancy
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+	var req dto.VacancyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
 
-	id, err := h.vacancyStorage.CreateVacancy(r.Context(), v)
+	id, err := h.vacancyService.Create(r.Context(), req)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "Не удалось создать вакансию: "+err.Error())
+		jsonError(w, http.StatusInternalServerError, "Не удалось создать")
 		return
 	}
-	v.ID = id
 
-	jsonResponse(w, http.StatusCreated, v)
+	res := dto.VacancyResponse{
+		ID: id, Title: req.Title, Description: req.Description,
+		Salary: req.Salary, City: req.City, PublishedAt: req.PublishedAt,
+	}
+	jsonResponse(w, http.StatusCreated, res)
 }
 
 func (h *Handler) UpdateVakansii(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "Неверный ID вакансии")
+		jsonError(w, http.StatusBadRequest, "Неверный ID")
 		return
 	}
 
-	var v models.Vacancy
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+	var req dto.VacancyRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
 
-	if err := h.vacancyStorage.UpdateVacancy(r.Context(), id, v); err != nil {
-		jsonError(w, http.StatusInternalServerError, "Не удалось обновить вакансию")
+	if err := h.vacancyService.Update(r.Context(), id, req); err != nil {
+		jsonError(w, http.StatusInternalServerError, "Не удалось обновить")
 		return
 	}
-	v.ID = id
 
-	jsonResponse(w, http.StatusOK, v)
+	res := dto.VacancyResponse{
+		ID: id, Title: req.Title, Description: req.Description,
+		Salary: req.Salary, City: req.City, PublishedAt: req.PublishedAt,
+	}
+	jsonResponse(w, http.StatusOK, res)
 }
 
 func (h *Handler) DeleteVakansii(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "Неверный ID вакансии")
+		jsonError(w, http.StatusBadRequest, "Неверный ID")
 		return
 	}
 
-	if err := h.vacancyStorage.DeleteVacancy(r.Context(), id); err != nil {
-		jsonError(w, http.StatusInternalServerError, "Не удалось удалить вакансию")
+	if err := h.vacancyService.Delete(r.Context(), id); err != nil {
+		jsonError(w, http.StatusInternalServerError, "Не удалось удалить")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) ApplyForVakansii(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	vacID, err := strconv.Atoi(vars["id"])
+	vacID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "Неверный ID вакансии")
 		return
 	}
 
-	var o models.Application
-	if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
+	var req dto.ApplicationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "Некорректный JSON")
 		return
 	}
-	o.VacancyID = vacID
 
-	id, err := h.otklikStorage.CreateOtklik(r.Context(), o)
+	id, err := h.applicationService.Create(r.Context(), vacID, req)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "Не удалось создать отклик: "+err.Error())
+		jsonError(w, http.StatusInternalServerError, "Не удалось создать отклик")
 		return
 	}
-	o.ID = id
 
-	jsonResponse(w, http.StatusCreated, o)
+	res := dto.ApplicationResponse{
+		ID: id, ResumeID: req.ResumeID, VacancyID: vacID,
+	}
+	jsonResponse(w, http.StatusCreated, res)
 }
 
 func (h *Handler) GetOtkliki(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	vacID, err := strconv.Atoi(vars["id"])
+	vacID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "Неверный ID вакансии")
 		return
 	}
 
-	otkliki, err := h.otklikStorage.GetOtklikiByVacancyID(r.Context(), vacID)
+	res, err := h.applicationService.GetByVacancyID(r.Context(), vacID)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "Ошибка получения откликов")
 		return
 	}
-	if otkliki == nil {
-		otkliki = []models.Application{}
+	if res == nil {
+		res = []dto.ApplicationResponse{}
 	}
-	jsonResponse(w, http.StatusOK, otkliki)
+	jsonResponse(w, http.StatusOK, res)
 }
